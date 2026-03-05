@@ -3,6 +3,8 @@ package httpauth
 import (
 	"net/http"
 	"strings"
+
+	"github.com/tasker-iniutin/common/authctx"
 )
 
 type Verifier interface {
@@ -22,12 +24,13 @@ func AuthJWT(next http.Handler, v Verifier, whitelist map[string]struct{}) http.
 			return
 		}
 
-		if _, err := v.VerifyAccess(token); err != nil {
+		userID, err := v.VerifyAccess(token)
+		if err != nil {
 			http.Error(w, "invalid token", http.StatusUnauthorized)
 			return
 		}
-
-		next.ServeHTTP(w, r)
+		ctx := authctx.WithUserID(r.Context(), userID)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 

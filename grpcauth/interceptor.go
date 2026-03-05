@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/tasker-iniutin/common/authctx"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -40,10 +42,11 @@ func UnaryAuthInterceptor(v Verifier, whitelist map[string]struct{}) grpc.UnaryS
 			return nil, status.Error(codes.Unauthenticated, "bad authorization")
 		}
 
-		if _, err := v.VerifyAccess(token); err != nil {
+		userID, err := v.VerifyAccess(token)
+		if err != nil {
 			return nil, status.Error(codes.Unauthenticated, "invalid token")
 		}
-
+		ctx = authctx.WithUserID(ctx, userID)
 		return handler(ctx, req)
 	}
 }

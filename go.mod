@@ -1,9 +1,9 @@
-module github.com/you/todo/common
+module github.com/tasker-iniutin/common
 
 go 1.24.0
 
 require (
-	github.com/golang-jwt/jwt/v5 v5.2.1
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	golang.org/x/crypto v0.48.0
 	google.golang.org/grpc v1.79.1
 )
