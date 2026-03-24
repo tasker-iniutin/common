@@ -13,6 +13,11 @@ type Verifier interface {
 
 func AuthJWT(next http.Handler, v Verifier, whitelist map[string]struct{}) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodOptions {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		if _, ok := whitelist[r.URL.Path]; ok {
 			next.ServeHTTP(w, r)
 			return
