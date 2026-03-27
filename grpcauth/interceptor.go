@@ -2,9 +2,9 @@ package grpcauth
 
 import (
 	"context"
-	"strings"
 
 	"github.com/tasker-iniutin/common/authctx"
+	"github.com/tasker-iniutin/common/httpauth"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -23,7 +23,7 @@ func UnaryAuthInterceptor(v Verifier, whitelist map[string]struct{}) grpc.UnaryS
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
 	) (any, error) {
-		if _, ok := whitelist[info.FullMethod]; ok {
+		if IsWhitelisted(whitelist, info.FullMethod) {
 			return handler(ctx, req)
 		}
 
@@ -37,7 +37,7 @@ func UnaryAuthInterceptor(v Verifier, whitelist map[string]struct{}) grpc.UnaryS
 			return nil, status.Error(codes.Unauthenticated, "missing authorization")
 		}
 
-		token := extractBearer(auth)
+		token := httpauth.ExtractBearer(auth)
 		if token == "" {
 			return nil, status.Error(codes.Unauthenticated, "bad authorization")
 		}
@@ -56,15 +56,4 @@ func first(v []string) string {
 		return ""
 	}
 	return v[0]
-}
-
-func extractBearer(h string) string {
-	parts := strings.SplitN(h, " ", 2)
-	if len(parts) != 2 {
-		return ""
-	}
-	if !strings.EqualFold(parts[0], "Bearer") {
-		return ""
-	}
-	return strings.TrimSpace(parts[1])
 }

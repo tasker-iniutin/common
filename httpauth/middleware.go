@@ -2,7 +2,6 @@ package httpauth
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/tasker-iniutin/common/authctx"
 )
@@ -11,6 +10,7 @@ type Verifier interface {
 	VerifyAccess(tokenStr string) (userID uint64, err error)
 }
 
+// Middleware for authorization checking and adding user_id in ctx
 func AuthJWT(next http.Handler, v Verifier, whitelist map[string]struct{}) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodOptions {
@@ -23,7 +23,7 @@ func AuthJWT(next http.Handler, v Verifier, whitelist map[string]struct{}) http.
 			return
 		}
 
-		token := extractBearer(r.Header.Get("Authorization"))
+		token := ExtractBearer(r.Header.Get("Authorization"))
 		if token == "" {
 			http.Error(w, "missing bearer token", http.StatusUnauthorized)
 			return
@@ -37,15 +37,4 @@ func AuthJWT(next http.Handler, v Verifier, whitelist map[string]struct{}) http.
 		ctx := authctx.WithUserID(r.Context(), userID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
-}
-
-func extractBearer(h string) string {
-	parts := strings.SplitN(h, " ", 2)
-	if len(parts) != 2 {
-		return ""
-	}
-	if !strings.EqualFold(parts[0], "Bearer") {
-		return ""
-	}
-	return strings.TrimSpace(parts[1])
 }
